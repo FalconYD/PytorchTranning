@@ -196,52 +196,191 @@
 #        correct += (output_index == y_).sum().float()
 #    print("Accuracy of Test Data: {}".format(100 * correct / total))
 
+#--------------------------------------------------------------------------------------
+#import torch
+#import torchvision
+#import torchvision.transforms as tr
+#from torch.utils.data import DataLoader, Dataset
+#import numpy as np
+#import CovModule as cm
+#
+#transf = tr.Compose([tr.Resize(8), tr.ToTensor()])
+#
+#trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transf)
+#testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transf)
+#
+#trainset[0][0].size()
+#
+#trainloader = DataLoader(trainset, batch_size=50, shuffle=True, num_workers=2)
+#testloader = DataLoader(trainset, batch_size=50, shuffle=True, num_workers=2)
+#
+#len(trainloader)
+#
+#dataiter = iter(trainloader)
+#images, labels = dataiter.next()
+#
+#images.size()
+#
+#
+#transf = tr.Compose([tr.Resize(16), tr.ToTensor()])
+#trainset1 = torchvision.datasets.ImageFolder(root='./class', transform=transf)
+#trainloader1 = DataLoader(trainset, batch_size=10, shuffle=False, num_workers=2)
+#
+#
+#class TensorData(Dataset):
+#    def __init__(self, x_data, y_data):
+#        self.x_data = torch.FloatTensor(x_data)
+#        self.x_data = self.x_data.permute(0,3,1,2)
+#        self.y_data = torch.longTensor(y_data)
+#        self.len = self.Y_data.shape[0]
+#
+#    def __getitem__(self, index):
+#        return self.x_data[index], self.y_data[index]
+#
+#    def __len__(self):
+#        return self.len
+#
+#train_data = TensorData(train_images, train_labels)
+#train_loader = DataLoader(train_data, batch_size=10, shuffle=False, num_workers=2)
+#
+#trans = tr.Compose([cm.ToTensor(), cm.LinearTensor(2,5)])
+#ds1 = cm.MyDataset(train_images, train_labels, transform=trans)
+#train_loader1 = DataLoader(ds1, batch_size=10, shuffle=True)
+
+
+#--------------------------------------------------------------------------------------
 import torch
 import torchvision
-import torchvision.transforms as tr
-from torch.utils.data import DataLoader, Dataset
-import numpy as np
-import CovModule as cm
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
 
-transf = tr.Compose([tr.Resize(8), tr.ToTensor()])
+# Load Data set
+transform = transforms.Compose(
+    [transforms.ToTensor(), 
+     transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5))])
 
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transf)
-testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transf)
+trainset = torchvision.datasets.CIFAR10(root='./data', train=True, 
+                                        download=True, transform=transform)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=8,
+                                          shuffle=True, num_workers=0)
 
-trainset[0][0].size()
+testset = torchvision.datasets.CIFAR10(root='./data', train=False, 
+                                        download=True, transform=transform)
+testloader = torch.utils.data.DataLoader(testset, batch_size=8,
+                                          shuffle=False, num_workers=0)
 
-trainloader = DataLoader(trainset, batch_size=50, shuffle=True, num_workers=2)
-testloader = DataLoader(trainset, batch_size=50, shuffle=True, num_workers=2)
+classes = ('plane', 'car', 'bird', 'cat',
+          'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
-len(trainloader)
+# Build a model
+import torch.nn as nn
+import torch.nn.functional as F
 
-dataiter = iter(trainloader)
-images, labels = dataiter.next()
+class Net(nn.Module):
+    def __init__(self):
+        super(Net, self).__init__()
+        self.layer = nn.Sequential(
+            nn.Conv2d(3,6,5),
+            nn.ReLU(),
+            nn.MaxPool2d(2,2),
+            nn.Conv2d(6,16,5),
+            nn.ReLU(),
+            nn.MaxPool2d(2,2)
+            )
+        self.fc_layer = nn.Sequential(
+            nn.Linear(16*5*5, 120),
+            nn.ReLU(),
+            nn.Linear(120,84),
+            nn.ReLU(),
+            nn.Linear(84,10)
+            )
+        #self.conv1 = nn.Conv2d(3,6,5)
+        #self.pool = nn.MaxPool2d(2,2)
+        #self.conv2 = nn.Conv2d(6,16,5)
+        #self.fc1 = nn.Linear(16*5*5, 120)
+        #self.fc2 = nn.Linear(120,84)
+        #self.fc3 = nn.Linear(84, 10)
 
-images.size()
+    def forward(self, x):
+        #x = self.pool(F.relu(self.conv1(x)))
+        #x = self.pool(F.relu(self.conv2(x)))
+        #x = x.view(-1,16 * 5 * 5)
+        #x = F.relu(self.fc1(x))
+        #x = F.relu(self.fc2(x))
+        #x = self.fc3(x)
+        #return x
+        out = self.layer(x)
+        out = out.view(-1,16 * 5 * 5)
+        out = self.fc_layer(out)
+        return out
+
+# GPU
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+net = Net().to(device)
+# CPU
+#net = Net()
+
+print('%s' % device)
+
+# Implement the model with training set
+import torch.optim as optim
+
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.0002, momentum=0.9)
 
 
-transf = tr.Compose([tr.Resize(16), tr.ToTensor()])
-trainset1 = torchvision.datasets.ImageFolder(root='./class', transform=transf)
-trainloader1 = DataLoader(trainset, batch_size=10, shuffle=False, num_workers=2)
+#for epoch in range(1): # loop over the dataset muliple times
+min = 2.0
+for epoch in range(20):
+
+    running_loss = 0.0
+    for i, data in enumerate(trainloader, 0):
+        # get the inputs; data is a list of [inputs, labels]
+        inputs, labels = data;
+        
+        inputs = inputs.to(device)
+        labels = labels.to(device)
+
+        # zero the parameter gradients
+        optimizer.zero_grad()
+
+        # forward + backward + optimize
+        outputs = net.forward(inputs)
+        loss = criterion(outputs, labels)
+        loss.backward()
+        optimizer.step()
+
+        now_loss = loss.item()
+
+        # print statistics
+        running_loss += now_loss
+        if i % 2000 == 1999: # print every 2000 mini-batches
+            print('[%d, %5d] loss: %.3f' % (epoch + 1, i + 1, running_loss / 2000))
+            if(min > running_loss / 2000):
+                min = running_loss / 2000
+                PATH = './cifar_net.pth'
+                torch.save(net.state_dict(), PATH)
+            running_loss = 0.0
+
+print('Finished Training')
 
 
-class TensorData(Dataset):
-    def __init__(self, x_data, y_data):
-        self.x_data = torch.FloatTensor(x_data)
-        self.x_data = self.x_data.permute(0,3,1,2)
-        self.y_data = torch.longTensor(y_data)
-        self.len = self.Y_data.shape[0]
+# Save the trained model
+#PATH = './cifar_net.pth'
+#torch.save(net.state_dict(), PATH)
 
-    def __getitem__(self, index):
-        return self.x_data[index], self.y_data[index]
+# Load the pre_trained model
+net = Net()
+net.load_state_dict(torch.load(PATH))
 
-    def __len__(self):
-        return self.len
+correct = 0
+total = 0
+with torch.no_grad():
+    for data in testloader:
+        images, labels = data
+        ouputs = net(images)
+        _, predicted = torch.max(ouputs.data, 1)
+        total += labels.size(0)
+        correct += (predicted == labels).sum().item()
 
-train_data = TensorData(train_images, train_labels)
-train_loader = DataLoader(train_data, batch_size=10, shuffle=False, num_workers=2)
-
-trans = tr.Compose([cm.ToTensor(), cm.LinearTensor(2,5)])
-ds1 = cm.MyDataset(train_images, train_labels, transform=trans)
-train_loader1 = DataLoader(ds1, batch_size=10, shuffle=True)
+print('Accuracy of the network on the 10000 test images: %d %%' % (100 * correct / total))

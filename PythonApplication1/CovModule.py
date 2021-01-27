@@ -1,6 +1,5 @@
 import torch
 import torchvision
-import torchvision.transforms as tr
 from torch.utils.data import Dataset
 
 class MyDataset(Dataset):
