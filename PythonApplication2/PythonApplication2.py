@@ -166,7 +166,8 @@ class CvtColor:
 width = 28
 height = 28
 
-file = 'img2.jpg'
+file = 'img0.jpg'
+#file = 'IMG_2.png'
 #Loading the file
 #img2 = cv.imread(file, cv.IMREAD_COLOR)
 img2 = cv.imread(file, cv.IMREAD_GRAYSCALE)
@@ -174,7 +175,8 @@ img2 = cv.imread(file, cv.IMREAD_GRAYSCALE)
 #Format for the Mul:0 Tensor
 img2 = cv.resize(img2, dsize=(width,height), interpolation = cv.INTER_CUBIC)
 
-#cv.imshow("Test",img2)
+img2 = cv.bitwise_not(img2)
+#cv.imshow('IMG',img2)
 #cv.waitKey(0)
 #cv.destroyAllWindows()
 
@@ -187,7 +189,7 @@ img = torch.FloatTensor(np_image_data)
 img.permute(2,0,1)
 print(img.shape)
 
-dset = MyDataset(img, '4')
+dset = MyDataset(img, '2')
 # 메모리 공유
 #img = torch.from_numpy(np_image_data)
 #-----------------------------------------------------
