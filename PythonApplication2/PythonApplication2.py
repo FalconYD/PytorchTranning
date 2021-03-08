@@ -98,6 +98,8 @@ class CNN(torch.nn.Module):
 # Save the trained model
 PATH = './cifar_net.pth'
 #torch.save(model.state_dict(), PATH)
+import torchvision.models as models;
+model = models.resnet50(pretrained=True).to(device);
 
 model = CNN().to(device)
 model.load_state_dict(torch.load(PATH))
@@ -175,10 +177,13 @@ img2 = cv.imread(file, cv.IMREAD_GRAYSCALE)
 #Format for the Mul:0 Tensor
 img2 = cv.resize(img2, dsize=(width,height), interpolation = cv.INTER_CUBIC)
 
+cv.imshow('IMG',img2)
+cv.waitKey(0)
+
 img2 = cv.bitwise_not(img2)
-#cv.imshow('IMG',img2)
-#cv.waitKey(0)
-#cv.destroyAllWindows()
+cv.imshow('IMG',img2)
+cv.waitKey(0)
+cv.destroyAllWindows()
 
 #Numpy array
 np_image_data = np.resize(img2, (28,28, 1))

@@ -7,6 +7,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonApplication1", "Pytho
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "PythonApplication2", "PythonApplication2\PythonApplication2.pyproj", "{20C827A4-93CB-4018-A87B-5CD5D7588BF7}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "GANTEST", "GANTEST\GANTEST.pyproj", "{129801DA-D40C-4341-B33F-A5B7A27E74A3}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,6 +19,8 @@ Global
 		{88C1DFEC-03BC-412E-BF78-0AA3106D0508}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{20C827A4-93CB-4018-A87B-5CD5D7588BF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{20C827A4-93CB-4018-A87B-5CD5D7588BF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{129801DA-D40C-4341-B33F-A5B7A27E74A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{129801DA-D40C-4341-B33F-A5B7A27E74A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
