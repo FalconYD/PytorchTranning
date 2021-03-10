@@ -45,8 +45,8 @@ def imshow_grid(img):
     plt.imshow(np.transpose(npimg,(1,2,0)))
     plt.show()
 
-example_mini_batch_img, example_mini_batch_label = next(iter(train_data_loader))
-imshow_grid(example_mini_batch_img[0:16, :, :])
+#example_mini_batch_img, example_mini_batch_label = next(iter(train_data_loader))
+#imshow_grid(example_mini_batch_img[0:16, :, :])
 
 d_noise  = 100
 d_hidden = 256
@@ -65,17 +65,17 @@ G = nn.Sequential(
     nn.Tanh()
     ).to(device)
 
-# 노이즈 생성하기
-z = sample_z()
-# 가짜 이미지 생성하기
-img_fake = G(z).view(-1,28,28)
-# 이미지 출력하기
-imshow(img_fake.squeeze().cpu().detach())
-
-#Batch Size만큼 노이즈 생성하여 그리드로 출력하기
-z = sample_z(batch_size)
-img_fake = G(z)
-imshow_grid(img_fake)
+## 노이즈 생성하기
+#z = sample_z()
+## 가짜 이미지 생성하기
+#img_fake = G(z).view(-1,28,28)
+## 이미지 출력하기
+#imshow(img_fake.squeeze().cpu().detach())
+#
+##Batch Size만큼 노이즈 생성하여 그리드로 출력하기
+#z = sample_z(batch_size)
+#img_fake = G(z)
+#imshow_grid(img_fake)
 
 D = nn.Sequential(
     nn.Linear(28*28, d_hidden),
@@ -87,13 +87,14 @@ D = nn.Sequential(
     nn.Linear(d_hidden,1),
     nn.Sigmoid()).to(device)
 
-print(G(z).shape)
-print(D(G(z)).shape)
-print(D(G(z)[0:5]).transpose(0,1))
+#print(G(z).shape)
+#print(D(G(z)).shape)
+#print(D(G(z)[0:5]).transpose(0,1))
 
+# ============================= GAN 훈련 시키기 ==================================
 criterion = nn.BCELoss()
 
-def run_epoch(generator, disciminator, _optimizer_g, _optimizer_d):
+def run_epoch(generator, discriminator, _optimizer_g, _optimizer_d):
 
     generator.train()
     discriminator.train()
@@ -109,8 +110,8 @@ def run_epoch(generator, disciminator, _optimizer_g, _optimizer_d):
         # init optimizer
         _optimizer_d.zero_grad()
 
-        p_real = disciminator(img_batch.view(-1, 28*28))
-        p_fake = disciminator(generator(sample_z(batch_size, d_nosie)))
+        p_real = discriminator(img_batch.view(-1, 28*28))
+        p_fake = discriminator(generator(sample_z(batch_size, d_noise)))
 
         # ========================================================= #
         # Loss computation (soley based on the paper) #
@@ -139,12 +140,96 @@ def run_epoch(generator, disciminator, _optimizer_g, _optimizer_d):
         p_fake = discriminator(generator(sample_z(batch_size, d_noise)))
 
         # ========================================================= #
-        # Loss computation (soley vased on the paper) #
+        # Loss computtion (soley vased on the paper) #
         # ========================================================= #
 
         # insted of: torch.log(1.-p_fake, torch.ones_like(p_fake).to(device)) #
+
+        loss_g = -1 * torch.log(p_fake).mean()
+
+        # ========================================================= #
+        # Loss computation (based on Cross Entropy) #
+        # ========================================================= #
+
+        # loss_g = criterion(p_fake, torch>ones_like(p_fake).to(device))
 
         loss_g.backward()
 
         # Update parameters
         _optimizer_g.step()
+
+def evaluate_model(generator, discriminator):
+
+    p_real, p_fake = 0.,0.
+
+    generator.eval()
+    discriminator.eval()
+
+    for img_batch, label_batch in test_data_loader:
+
+        img_batch, label_batch = img_batch.to(device), label_batch.to(device)
+
+        with torch.autograd.no_grad():
+            p_real += (torch.sum(discriminator(img_batch.view(-1, 28*28))).item()) / 10000.
+            p_fake += (torch.sum(discriminator(generator(sample_z(batch_size, d_noise)))).item()) / 10000.
+
+    return p_real, p_fake
+
+
+def init_params(model):
+    for p in model.parameters():
+        if(p.dim() > 1):
+            nn.init.xavier_normal_(p)
+        else :
+            nn.init.uniform_(p, 0.1, 0.2)
+
+init_params(G)
+
+init_params(D)
+
+optimizer_g = optim.Adam(G.parameters(), lr = 0.0002)
+optimizer_d = optim.Adam(D.parameters(), lr = 0.0002)
+
+optimizer_g = torch.load("discriminator_optim.pth")
+optimizer_d = torch.load("generator_optim.pth")
+D = torch.load("discriminator.pth")
+G = torch.load("generator.pth")
+
+p_real, p_fake = evaluate_model(G,D)
+
+print('p_real: %f, p_g: %f' % (p_real, p_fake))
+imshow_grid(G(sample_z(16)).view(-1,1,28,28))
+
+
+#p_real_trace = []
+#p_fake_trace = []
+#
+#for epoch in range(200):
+#
+#    run_epoch(G, D, optimizer_g, optimizer_d)
+#    p_real, p_fake = evaluate_model(G,D)
+#
+#    p_real_trace.append(p_real)
+#    p_fake_trace.append(p_fake)
+#    print('%i' % (epoch))
+#    #if((epoch+1)%50==0):
+#    #    print('(epoch %i/200) p_real: %f, p_g: %f' % (epoch+1, p_real, p_fake))
+#    #    imshow_grid(G(sample_z(16)).view(-1,1,28,28))
+#
+#torch.save(D,"discriminator.pth");
+#torch.save(G,"generator.pth");
+#torch.save(optimizer_g,"discriminator_optim.pth");
+#torch.save(optimizer_d,"generator_optim.pth");
+ 
+
+#plt.plot(p_fake_trace, label='D(x_generated)')
+#plt.plot(p_real_trace, label='D(x_real)')
+#plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+#
+#plt.show()
+
+vis_loader = torch.utils.data.DataLoader(test_data, 16, True)
+img_vis, label_vis = next(iter(vis_loader))
+imshow_grid(img_vis)
+
+imshow_grid(G(sample_z(16,100)).view(-1,1,28,28))
